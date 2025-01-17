@@ -1,11 +1,9 @@
 import DownloadURL from "../popups/DownloadURL";
-import DownloadYoutube from "../popups/DownloadYoutube";
 import { useState, useEffect } from "react";
 
 export default function Main() {
     const { electron } = window;
     const [downloadURLWindow, setDownloadURLWindow] = useState(false);
-    const [downloadYoutubeWindow, setDownloadYoutubeWindow] = useState(false);
 
     const [downloads, setDownloads] = useState(new Map());
 
@@ -99,7 +97,6 @@ export default function Main() {
     return (
         <div className="h-screen w-screen bg-[#191919]">
             <DownloadURL showWindow={downloadURLWindow} setShowWindow={setDownloadURLWindow} />
-            <DownloadYoutube showWindow={downloadYoutubeWindow} setShowWindow={setDownloadYoutubeWindow} />
             <div className="w-full h-16 flex justify-end items-center draggable">
                 <div className="h-full px-5 flex">
                     <div className="h-8 pt-6">
@@ -116,21 +113,15 @@ export default function Main() {
                     <button onClick={() => setDownloadURLWindow(true)} className="rounded-r-none h-[65%] w-24 bg-[#2d2d2d] hover:bg-[#373737] flex justify-center items-center rounded">
                         <i className="bi bi-plus-lg text-xl text-[#4a4a4a]"></i>
                     </button>
-                    <button onClick={() => setDownloadYoutubeWindow(true)} className="rounded-none h-[65%] w-24 bg-[#2d2d2d] hover:bg-[#373737] flex justify-center items-center">
-                        <i className="bi bi-youtube text-xl text-[#4a4a4a]"></i>
-                    </button>
-                    <button onClick={() => setDownloadURLWindow(true)} className="rounded-none h-[65%] w-24 bg-[#2d2d2d] hover:bg-[#373737] flex justify-center items-center">
+                    <button onClick={() => setDownloadURLWindow(true)} className="h-[65%] w-24 bg-[#2d2d2d] hover:bg-[#373737] flex justify-center items-center rounded-none">
                         <i className="bi bi-magnet-fill text-lg text-[#4a4a4a] transform rotate-45"></i>
                     </button>
                     <button onClick={() => window.open("https://github.com/repyh/download-manager")} className="rounded-l-none h-[65%] w-24 bg-[#2d2d2d] hover:bg-[#373737] flex justify-center items-center rounded">
-                        <i className="bi bi-box-arrow-up-right text-lg text-[#4a4a4a] transform"></i>
+                        <i className="bi bi-git text-lg text-[#4a4a4a] transform"></i>
                     </button>
-                    <div className="h-full w-[calc(100%-(4*6rem))] flex flex-row-reverse items-center gap-2">
+                    <div className="h-full w-[calc(100%-(3*6rem))] flex flex-row-reverse items-center gap-2">
                         <button className="hover:bg-[#262626] h-9 w-9 flex justify-center items-center rounded-full">
                             <i className="bi bi-gear-fill text-[#4a4a4a] text-xl"></i>
-                        </button>
-                        <button className="hover:bg-[#262626] h-9 w-9 flex justify-center items-center rounded-full">
-                            <i className="bi bi-arrow-up-right text-[#4a4a4a] text-xl"></i>
                         </button>
                         <button className="hover:bg-[#262626] h-9 w-9 flex justify-center items-center rounded-full">
                             <i className="bi bi-file-earmark-arrow-down-fill text-[#4a4a4a] text-xl"></i>
