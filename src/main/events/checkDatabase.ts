@@ -1,12 +1,14 @@
 import eventInterface from './eventInterface';
 import electron from 'electron';
+import fs from 'fs';
 
 export default {
-    eventName: 'close-app',
+    eventName: 'check-database',
     execute: (event: electron.IpcMainEvent, arg: any, app: electron.App, window: electron.BrowserWindow) => {
-        window.close();
-        if (process.platform !== 'darwin') {
-            app.quit();
+        const appPath = app.getPath('userData');
+
+        if(!fs.existsSync(`${appPath}/sqlite-database`)) {
+            fs.mkdirSync(appPath);
         }
     }
 } as eventInterface;

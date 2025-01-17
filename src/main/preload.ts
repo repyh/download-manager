@@ -19,6 +19,7 @@ const electronHandler = {
             ipcRenderer.once(channel, (_event, ...args) => func(...args));
         }
     },
+    selectFolder: () => ipcRenderer.invoke('dialog:openDirectory'),
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

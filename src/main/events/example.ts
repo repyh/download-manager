@@ -6,6 +6,7 @@ export default {
     execute: (event: electron.IpcMainEvent, arg: any, app: electron.App, window: electron.BrowserWindow) => {
         const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
         console.log(msgTemplate(arg));
+        console.log(app.getPath('userData'))
         event.reply('ipc-example', msgTemplate('pong'));
         // setTimeout(() => {
         //     window.close();

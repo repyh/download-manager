@@ -6,7 +6,7 @@ import eventInterface from './events/eventInterface';
 
 export default function(window: BrowserWindow | null, app: Electron.App) {
     for(const file of fs.readdirSync('./src/main/events/')) {
-        if(['eventInterface.ts'].includes(file) || !file.endsWith('.ts')) continue;
+        if(['eventInterface.ts', '.worker.ts'].includes(file) || !file.endsWith('.ts')) continue;
         import(`./events/${file}`).then((module) => {
             const obj: eventInterface = module.default;
 

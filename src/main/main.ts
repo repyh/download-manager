@@ -1,5 +1,5 @@
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -75,6 +75,20 @@ const createWindow = async () => {
         frame: false,
     });
     events(mainWindow, app);
+
+    ipcMain.handle('dialog:openDirectory', async () => {
+        if (!mainWindow) {
+            throw new Error('"mainWindow" is not defined');
+        }
+        const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openDirectory']
+        });
+        if (canceled) {
+            return '';
+        } else {
+            return filePaths[0];
+        }
+    })
 
     mainWindow.loadURL(resolveHtmlPath('index.html'));
 

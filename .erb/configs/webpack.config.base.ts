@@ -28,6 +28,10 @@ const configuration: webpack.Configuration = {
           },
         },
       },
+      {
+        test: /\.worker\.(js|ts)$/,
+        use: { loader: 'worker-loader' },
+      },
     ],
   },
 

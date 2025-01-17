@@ -9,10 +9,15 @@ module.exports = {
         sky: colors.sky,
         cyan: colors.cyan,
       },
+      aspectRatio: {
+        '16/9': [16, 9],
+      }
     },
   },
   variants: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/aspect-ratio')
+  ],
 };

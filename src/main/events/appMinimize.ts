@@ -2,11 +2,8 @@ import eventInterface from './eventInterface';
 import electron from 'electron';
 
 export default {
-    eventName: 'close-app',
+    eventName: 'minimize-app',
     execute: (event: electron.IpcMainEvent, arg: any, app: electron.App, window: electron.BrowserWindow) => {
-        window.close();
-        if (process.platform !== 'darwin') {
-            app.quit();
-        }
+        window.minimize();
     }
 } as eventInterface;
