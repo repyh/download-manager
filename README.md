@@ -1,2 +1,2 @@
-# Primary: #16171D
-# Highlight: #A57EFD
+# Download Manager
+A simple hobby project.
