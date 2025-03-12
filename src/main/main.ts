@@ -1,6 +1,7 @@
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
+import express from 'express';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
@@ -13,6 +14,27 @@ class AppUpdater {
         autoUpdater.checkForUpdatesAndNotify();
     }
 }
+
+const server = express();
+server.use(express.json());
+
+server.post('/download', (req, res) => {
+    const fileUrl = req.body.url;
+    console.log(req.body)
+
+    if (mainWindow) {
+        // Send the file URL to the renderer process
+        mainWindow.webContents.send('file-download', fileUrl);
+    
+        res.json({ status: 'success', message: 'URL sent to renderer' });
+    } else {
+        res.status(500).json({ status: 'error', message: 'Main window not available' });
+    }
+})
+
+server.listen(1287, () => {
+    console.log('Download fetcher now listening to http://localhost:1287/')
+})
 
 let mainWindow: BrowserWindow | null = null;
 
