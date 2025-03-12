@@ -11,12 +11,16 @@ A modern, cross-platform download manager built with Electron and React.
 ## ✨ Features
 
 - 📥 Download files from the web with ease
-- ⏸️ Pause and resume downloads
 - 🚀 Accelerate downloads with multi-connection downloading
 - 📊 Monitor download progress with real-time statistics
 - 🗂️ Organize downloads in categories
 - 🌙 Light/Dark theme support
 - 🔔 Notification when downloads complete
+
+## 🔨 In-development
+
+- Pause and resumes.
+- Multi-file downloads.
 
 ## 🚀 Installation
 
