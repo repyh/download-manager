@@ -6,7 +6,7 @@
 
 A modern, cross-platform download manager built with Electron and React.
 
-![Download Manager Screenshot](docs/assets/screenshot.png)
+![Download Manager Screenshot](docs/main_screenshot.png)
 
 ## ✨ Features
 
