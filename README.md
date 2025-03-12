@@ -6,7 +6,7 @@
 
 A modern, cross-platform download manager built with Electron and React.
 
-![Download Manager Screenshot](docs/main_screenshot.png)
+![Download Manager Screenshot](https://github.com/repyh/download-manager/blob/main/main_screenshot.png)
 
 ## ✨ Features
 
