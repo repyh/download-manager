@@ -1,6 +1,182 @@
 import DownloadURL from "../popups/DownloadURL";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import throttle from 'lodash.throttle';
+
+// Define interface for DownloadItem props
+interface DownloadItemProps {
+    downloadKey: string;
+    downloadData: {
+        type: string;
+        fileName: string;
+        fileType: string;
+        fileSize: number;
+        totalProgress: number;
+        finished: boolean;
+        status: string;
+        downloadSpeed: number;
+    };
+    formatFileSize: (bytes: number) => string;
+}
+
+// DownloadItem component - memoized to prevent unnecessary re-renders
+const DownloadItem = memo(({ downloadKey, downloadData, formatFileSize }: DownloadItemProps) => {
+    const {type, fileName, fileType, fileSize, totalProgress, finished, status, downloadSpeed} = downloadData;
+    let statusColor, statusIcon, statusBg;
+
+    switch(status) {
+        case 'starting':
+            statusColor = 'text-amber-600';
+            statusBg = 'bg-amber-100';
+            statusIcon = 'bi-hourglass-split';
+            break;
+        case 'downloading':
+            statusColor = 'text-[#1e40af]';
+            statusBg = 'bg-blue-100';
+            statusIcon = 'bi-arrow-down-circle-fill';
+            break;
+        case 'finished':
+            statusColor = 'text-emerald-600';
+            statusBg = 'bg-emerald-100';
+            statusIcon = 'bi-check-circle-fill';
+            break;
+        default:
+            statusColor = 'text-amber-600';
+            statusBg = 'bg-amber-100';
+            statusIcon = 'bi-hourglass-split';
+            break;
+    }
+
+    let displayDownload = `${(totalProgress * 100).toFixed(2)}% Downloaded (${downloadSpeed.toFixed(2)}MB/s)`;
+
+    switch(true) {
+        case totalProgress <= 0:
+            displayDownload = 'Preparing';
+            break;
+        case totalProgress >= 1 && !finished:
+            displayDownload = 'Repacking';
+            break;
+        case finished:
+            displayDownload = 'Finished';
+            break;
+    }
+
+    return (
+        <div 
+            className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all"
+        >
+            <div 
+                className={`h-1 ${finished ? 'bg-emerald-500' : 'bg-[#1e40af]'}`} 
+                style={{ width: `${totalProgress*100}%` }}
+            >
+            </div>
+            
+            <div className="p-5">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-4 items-start">
+                        <div className={`flex items-center justify-center h-12 w-12 rounded-lg ${statusBg} ${statusColor} p-2`}>
+                            <i className={`bi ${statusIcon} text-2xl`}></i>
+                        </div>
+                        
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-gray-800 inter font-semibold text-lg">{fileName}</h2>
+                                <span className={`px-2 py-0.5 rounded-md ${statusBg} ${statusColor} text-xs font-medium`}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </span>
+                            </div>
+                            <p className="text-[#1e40af] nunito text-xs font-medium mt-0.5">{type.toUpperCase()} DOWNLOAD</p>
+                        </div>
+                    </div>
+                    
+                    {!finished && (
+                        <div className="flex items-center">
+                            <button className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 p-2 rounded transition-all">
+                                <i className="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="bg-blue-50 rounded-lg p-3">
+                        <p className="text-gray-500 text-xs">File Type</p>
+                        <p className="text-gray-700 text-sm font-medium">{fileType}</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3">
+                        <p className="text-gray-500 text-xs">Size</p>
+                        <p className="text-gray-700 text-sm font-medium">{formatFileSize(fileSize)}</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3">
+                        <p className="text-gray-500 text-xs">Speed</p>
+                        <p className="text-gray-700 text-sm font-medium">
+                            {finished ? 'Completed' : `${downloadSpeed.toFixed(2)} MB/s`}
+                        </p>
+                    </div>
+                </div>
+                
+                <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                        <p className="text-gray-500 text-xs">Progress</p>
+                        <p className="text-gray-700 text-xs font-medium">{(totalProgress * 100).toFixed(1)}%</p>
+                    </div>
+                    <div className="w-full h-2 bg-blue-50 rounded-full overflow-hidden">
+                        <div 
+                            style={{ width: `${totalProgress*100}%` }} 
+                            className={`h-full transition-all duration-300 ${finished ? 'bg-emerald-500' : 'bg-[#1e40af]'}`}
+                        ></div>
+                    </div>
+                    <p className="text-gray-500 text-xs text-right mt-1">{displayDownload}</p>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+// Define interface for HistoryItem props
+interface HistoryItemProps {
+  download: {
+    type: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    completedAt: string;
+    id: string;
+  };
+  index: number;
+  formatFileSize: (bytes: number) => string;
+  formatDate: (dateString: string) => string;
+}
+
+// HistoryItem component - memoized to prevent unnecessary re-renders
+const HistoryItem = memo(({ download, index, formatFileSize, formatDate }: HistoryItemProps) => {
+    return (
+        <tr className={`text-gray-700 border-b border-gray-200 ${index % 2 === 0 ? 'bg-blue-50' : 'bg-white'} hover:bg-blue-100 transition-colors`}>
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-blue-100 text-[#1e40af] flex items-center justify-center">
+                        <i className={`bi ${download.type === 'youtube' ? 'bi-youtube' : 'bi-file-earmark'}`}></i>
+                    </div>
+                    <div>
+                        <p className="font-medium text-gray-800">{download.fileName}</p>
+                        <p className="text-xs text-gray-500">.{download.fileType}</p>
+                    </div>
+                </div>
+            </td>
+            <td className="px-6 py-4 text-sm">
+                <span className="px-2 py-1 rounded-full bg-blue-100 text-[#1e40af] text-xs">
+                    {download.type.toUpperCase()}
+                </span>
+            </td>
+            <td className="px-6 py-4 text-sm">{formatFileSize(download.fileSize)}</td>
+            <td className="px-6 py-4 text-sm">{formatDate(download.completedAt)}</td>
+            <td className="px-6 py-4 text-sm text-right">
+                <button className="text-gray-500 hover:text-[#1e40af]">
+                    <i className="bi bi-three-dots-vertical"></i>
+                </button>
+            </td>
+        </tr>
+    );
+});
 
 export default function Main() {
     const { electron } = window;
@@ -11,7 +187,48 @@ export default function Main() {
     const [activeView, setActiveView] = useState('downloads'); // 'downloads' or 'history'
     const [completedDownloads, setCompletedDownloads] = useState<Array<any>>([]);
 
-    const updateDownloads = (key: any, newProperty: any) => {
+    // localStorage key for download history
+    const STORAGE_KEY = 'download-manager-history';
+
+    // Load download history from localStorage on component mount
+    useEffect(() => {
+        try {
+            const storedHistory = localStorage.getItem(STORAGE_KEY);
+            if (storedHistory) {
+                const parsedHistory = JSON.parse(storedHistory);
+                if (Array.isArray(parsedHistory)) {
+                    setCompletedDownloads(parsedHistory);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load download history from localStorage:', error);
+        }
+    }, []);
+
+    // Debounced function to save to localStorage (prevents excessive writes)
+    const debouncedSaveToStorage = useCallback(
+        throttle((data: any[]) => {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (error) {
+                console.error('Failed to save download history to localStorage:', error);
+            }
+        }, 1000),
+        []
+    );
+
+    // Save to localStorage whenever completedDownloads changes
+    useEffect(() => {
+        if (completedDownloads.length > 0) {
+            debouncedSaveToStorage(completedDownloads);
+        }
+        return () => {
+            debouncedSaveToStorage.cancel(); // Cancel any pending save on unmount
+        };
+    }, [completedDownloads, debouncedSaveToStorage]);
+
+    // Use useCallback to memoize functions that don't need to be recreated every render
+    const updateDownloads = useCallback((key: any, newProperty: any) => {
         console.log(key, newProperty)
         setDownloads((prev) => {
             const newMap = new Map(prev);
@@ -22,126 +239,200 @@ export default function Main() {
             }
             return newMap;
         });
-    };
+    }, []);
 
-    function addDownload(key: any, value: any) {
+    // Create a single throttled update function that persists across renders
+    const throttledUpdateDownloads = useCallback(
+        throttle((key: any, newProperty: any) => {
+            updateDownloads(key, newProperty);
+        }, 1000), 
+        [updateDownloads]
+    );
+
+    const addDownload = useCallback((key: any, value: any) => {
         setDownloads((prev) => new Map(prev).set(key, value));
-    }
+    }, []);
 
-    function removeDownload(key: any) {
+    const removeDownload = useCallback((key: any) => {
         setDownloads((prev) => {
             const newD = new Map(prev);
             newD.delete(key);
             return newD;
-        })
-    }
+        });
+    }, []);
 
-    window.electron.ipcRenderer.on('file-download', (payload: any) => {
-        console.log(payload);
-        setFetchedURL(payload.finalUrl);
-        setDownloadURLWindow(true);
-    })
-
-    window.electron.ipcRenderer.on('download-progress', (response: any) => {
-        switch(response[0]) {
-            case 'file': {
-                const [type, fileName, fileType, fileSize, workerId, progress, totalProgress, workerSpeeds] = response as ['file' | 'youtube', string, string, number, number, number, number, Array<number>];
-                const downloadSpeed = workerSpeeds.reduce((acc, curr) => acc + curr, 0) / workerSpeeds.length / 1024;
-
-                const throttleUpdate = throttle(updateDownloads, 1000);
-                throttleUpdate(`${fileName}/${fileType}`, {
-                    totalProgress,
-                    fileType,
-                    status: 'downloading',
-                    downloadSpeed
-                });
-
-                break;
-            }
-        }
-    })
-
-    window.electron.ipcRenderer.on('download-finished', (res: any) => {
-        switch(res[0]) {
-            case 'file': {
-                const [type, fileName, fileType, fileSize, oldType] = res as ['file' | 'youtube', string, string, number, string];
-                updateDownloads(`${fileName}/${oldType}`, {
-                    fileType,
-                    finished: true,
-                    status: 'finished'
-                });
-                
-                // Add to completed downloads history - check for duplicates first
-                const newDownloadId = `${fileName}/${fileType}`;
-                setCompletedDownloads(prev => {
-                    // Check if we already have this download in history
-                    const existingDownload = prev.find(d => 
-                        d.fileName === fileName && 
-                        (d.fileType === fileType || d.fileType === oldType)
-                    );
-                    
-                    // If it exists, don't add it again
-                    if (existingDownload) {
-                        return prev;
-                    }
-                    
-                    // Otherwise add the new download to history
-                    const download = {
-                        type,
-                        fileName,
-                        fileType,
-                        fileSize,
-                        completedAt: new Date().toISOString(),
-                        id: `${fileName}/${oldType}_${Date.now()}`
-                    };
-                    
-                    return [download, ...prev];
-                });
-                break;
-            }
-        }
-    })
-
-    window.electron.ipcRenderer.on('download-starting', (res: any) => {
-        switch(res[0]) {
-            case 'file': {
-                const [type, fileName, fileType, fileSize] = res as ['file' | 'youtube', string, string, number];
-                addDownload(`${fileName}/${fileType}`, {
-                    type,
-                    fileName,
-                    fileType,
-                    fileSize,
-                    totalProgress: 0,
-                    finished: false,
-                    status: 'starting',
-                    downloadSpeed: 0
-                })
-                break;
-            }
-        }
-    })
-
-    function closeApp() {
-        electron.ipcRenderer.sendMessage('close-app', []);
-    }
-
-    function minimizeApp() {
-        electron.ipcRenderer.sendMessage('minimize-app', []);
-    }
-
-    function formatFileSize(bytes: number) {
+    // Format utility functions
+    const formatFileSize = useCallback((bytes: number) => {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
+    }, []);
 
-    function formatDate(dateString: string) {
+    const formatDate = useCallback((dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    }
+    }, []);
 
+    // UI action handlers
+    const closeApp = useCallback(() => {
+        electron.ipcRenderer.sendMessage('close-app', []);
+    }, [electron]);
+
+    const minimizeApp = useCallback(() => {
+        electron.ipcRenderer.sendMessage('minimize-app', []);
+    }, [electron]);
+
+    // Setup event listeners once on component mount
+    useEffect(() => {
+        const fileDownloadHandler = (payload: any) => {
+            console.log(payload);
+            setFetchedURL(payload.finalUrl);
+            setDownloadURLWindow(true);
+        };
+        
+        const downloadProgressHandler = (response: any) => {
+            switch(response[0]) {
+                case 'file': {
+                    const [type, fileName, fileType, fileSize, workerId, progress, totalProgress, workerSpeeds] = response as ['file' | 'youtube', string, string, number, number, number, number, Array<number>];
+                    const downloadSpeed = workerSpeeds.reduce((acc, curr) => acc + curr, 0) / workerSpeeds.length / 1024;
+
+                    // Use the pre-created throttled function instead of creating a new one every time
+                    throttledUpdateDownloads(`${fileName}/${fileType}`, {
+                        totalProgress,
+                        fileType,
+                        status: 'downloading',
+                        downloadSpeed
+                    });
+                    break;
+                }
+            }
+        };
+        
+        const downloadFinishedHandler = (res: any) => {
+            switch(res[0]) {
+                case 'file': {
+                    const [type, fileName, fileType, fileSize, oldType] = res as ['file' | 'youtube', string, string, number, string];
+                    updateDownloads(`${fileName}/${oldType}`, {
+                        fileType,
+                        finished: true,
+                        status: 'finished'
+                    });
+                    
+                    // Add to completed downloads history - check for duplicates first
+                    setCompletedDownloads(prev => {
+                        // Check if we already have this download in history
+                        const existingDownload = prev.find(d => 
+                            d.fileName === fileName && 
+                            (d.fileType === fileType || d.fileType === oldType)
+                        );
+                        
+                        // If it exists, don't add it again
+                        if (existingDownload) {
+                            return prev;
+                        }
+                        
+                        // Otherwise add the new download to history
+                        const download = {
+                            type,
+                            fileName,
+                            fileType,
+                            fileSize,
+                            completedAt: new Date().toISOString(),
+                            id: `${fileName}/${oldType}_${Date.now()}`
+                        };
+                        
+                        // Add new download to the beginning of the array
+                        const newHistory = [download, ...prev];
+                        
+                        // Update localStorage with the new history (done via useEffect)
+                        return newHistory;
+                    });
+                    break;
+                }
+            }
+        };
+        
+        const downloadStartingHandler = (res: any) => {
+            switch(res[0]) {
+                case 'file': {
+                    const [type, fileName, fileType, fileSize] = res as ['file' | 'youtube', string, string, number];
+                    addDownload(`${fileName}/${fileType}`, {
+                        type,
+                        fileName,
+                        fileType,
+                        fileSize,
+                        totalProgress: 0,
+                        finished: false,
+                        status: 'starting',
+                        downloadSpeed: 0
+                    });
+                    break;
+                }
+            }
+        };
+
+        // Add event listeners and store the cleanup functions
+        const removeFileDownloadListener = window.electron.ipcRenderer.on('file-download', fileDownloadHandler);
+        const removeProgressListener = window.electron.ipcRenderer.on('download-progress', downloadProgressHandler);
+        const removeFinishedListener = window.electron.ipcRenderer.on('download-finished', downloadFinishedHandler);
+        const removeStartingListener = window.electron.ipcRenderer.on('download-starting', downloadStartingHandler);
+
+        // Cleanup function to remove event listeners
+        return () => {
+            // Call the cleanup functions returned by the 'on' method
+            removeFileDownloadListener();
+            removeProgressListener();
+            removeFinishedListener();
+            removeStartingListener();
+            
+            // Cancel any pending throttled calls
+            throttledUpdateDownloads.cancel();
+        };
+    }, [addDownload, throttledUpdateDownloads, updateDownloads]);
+
+    // Memoize download list to prevent unnecessary re-renders
+    const downloadsList = useMemo(() => {
+        return Array.from(downloads).map(([key, value]) => (
+            <DownloadItem 
+                key={key} 
+                downloadKey={key} 
+                downloadData={value} 
+                formatFileSize={formatFileSize} 
+            />
+        ));
+    }, [downloads, formatFileSize]);
+
+    // Memoize history list to prevent unnecessary re-renders
+    const historyList = useMemo(() => {
+        return completedDownloads.map((download, index) => (
+            <HistoryItem 
+                key={download.id} 
+                download={download} 
+                index={index}
+                formatFileSize={formatFileSize}
+                formatDate={formatDate}
+            />
+        ));
+    }, [completedDownloads, formatFileSize, formatDate]);
+
+    // Add a function to clear history if needed
+    const clearDownloadHistory = useCallback(() => {
+        setCompletedDownloads([]);
+        try {
+            localStorage.removeItem(STORAGE_KEY);
+        } catch (error) {
+            console.error('Failed to clear download history from localStorage:', error);
+        }
+    }, []);
+
+    // Generate total storage used calculation once
+    const totalStorageUsed = useMemo(() => {
+        return formatFileSize(completedDownloads.reduce((acc, dl) => acc + (dl.fileSize || 0), 0));
+    }, [completedDownloads, formatFileSize]);
+
+    // The rest of the rendering code remains the same
     return (
         <div className="h-screen w-screen bg-[#f8fafc] flex overflow-hidden">
             {/* Sidebar */}
@@ -229,119 +520,7 @@ export default function Main() {
                     {/* Downloads View */}
                     {activeView === 'downloads' && (
                         <div className="space-y-4">
-                            {Array.from(downloads).map(([key, value]) => {
-                                const {type, fileName, fileType, fileSize, totalProgress, finished, status, downloadSpeed} = value;
-                                let statusColor, statusIcon, statusBg;
-
-                                switch(status) {
-                                    case 'starting':
-                                        statusColor = 'text-amber-600';
-                                        statusBg = 'bg-amber-100';
-                                        statusIcon = 'bi-hourglass-split';
-                                        break;
-                                    case 'downloading':
-                                        statusColor = 'text-[#1e40af]';
-                                        statusBg = 'bg-blue-100';
-                                        statusIcon = 'bi-arrow-down-circle-fill';
-                                        break;
-                                    case 'finished':
-                                        statusColor = 'text-emerald-600';
-                                        statusBg = 'bg-emerald-100';
-                                        statusIcon = 'bi-check-circle-fill';
-                                        break;
-                                    default:
-                                        statusColor = 'text-amber-600';
-                                        statusBg = 'bg-amber-100';
-                                        statusIcon = 'bi-hourglass-split';
-                                        break;
-                                }
-
-                                let displayDownload = `${(totalProgress * 100).toFixed(2)}% Downloaded (${downloadSpeed.toFixed(2)}MB/s)`;
-
-                                switch(true) {
-                                    case totalProgress <= 0:
-                                        displayDownload = 'Preparing';
-                                        break;
-                                    case totalProgress >= 1 && !finished:
-                                        displayDownload = 'Repacking';
-                                        break;
-                                    case finished:
-                                        displayDownload = 'Finished';
-                                        break;
-                                }
-
-                                return (
-                                    <div 
-                                        key={`${type}/${fileName}/${fileType}`} 
-                                        className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all"
-                                    >
-                                        <div 
-                                            className={`h-1 ${finished ? 'bg-emerald-500' : 'bg-[#1e40af]'}`} 
-                                            style={{ width: `${totalProgress*100}%` }}
-                                        >
-                                        </div>
-                                        
-                                        <div className="p-5">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div className="flex gap-4 items-start">
-                                                    <div className={`flex items-center justify-center h-12 w-12 rounded-lg ${statusBg} ${statusColor} p-2`}>
-                                                        <i className={`bi ${statusIcon} text-2xl`}></i>
-                                                    </div>
-                                                    
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <h2 className="text-gray-800 inter font-semibold text-lg">{fileName}</h2>
-                                                            <span className={`px-2 py-0.5 rounded-md ${statusBg} ${statusColor} text-xs font-medium`}>
-                                                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-[#1e40af] nunito text-xs font-medium mt-0.5">{type.toUpperCase()} DOWNLOAD</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                {!finished && (
-                                                    <div className="flex items-center">
-                                                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 p-2 rounded transition-all">
-                                                            <i className="bi bi-x-lg"></i>
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            <div className="grid grid-cols-3 gap-4 mb-4">
-                                                <div className="bg-blue-50 rounded-lg p-3">
-                                                    <p className="text-gray-500 text-xs">File Type</p>
-                                                    <p className="text-gray-700 text-sm font-medium">{fileType}</p>
-                                                </div>
-                                                <div className="bg-blue-50 rounded-lg p-3">
-                                                    <p className="text-gray-500 text-xs">Size</p>
-                                                    <p className="text-gray-700 text-sm font-medium">{formatFileSize(fileSize)}</p>
-                                                </div>
-                                                <div className="bg-blue-50 rounded-lg p-3">
-                                                    <p className="text-gray-500 text-xs">Speed</p>
-                                                    <p className="text-gray-700 text-sm font-medium">
-                                                        {finished ? 'Completed' : `${downloadSpeed.toFixed(2)} MB/s`}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex justify-between items-center">
-                                                    <p className="text-gray-500 text-xs">Progress</p>
-                                                    <p className="text-gray-700 text-xs font-medium">{(totalProgress * 100).toFixed(1)}%</p>
-                                                </div>
-                                                <div className="w-full h-2 bg-blue-50 rounded-full overflow-hidden">
-                                                    <div 
-                                                        style={{ width: `${totalProgress*100}%` }} 
-                                                        className={`h-full transition-all duration-300 ${finished ? 'bg-emerald-500' : 'bg-[#1e40af]'}`}
-                                                    ></div>
-                                                </div>
-                                                <p className="text-gray-500 text-xs text-right mt-1">{displayDownload}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                            {downloadsList}
                             
                             {downloads.size === 0 && (
                                 <div className="flex flex-col items-center justify-center h-96">
@@ -383,9 +562,7 @@ export default function Main() {
                                             <i className="bi bi-hdd"></i>
                                         </div>
                                     </div>
-                                    <p className="text-3xl text-gray-800 font-bold">
-                                        {formatFileSize(completedDownloads.reduce((acc, dl) => acc + (dl.fileSize || 0), 0))}
-                                    </p>
+                                    <p className="text-3xl text-gray-800 font-bold">{totalStorageUsed}</p>
                                 </div>
                                 
                                 <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
@@ -404,9 +581,19 @@ export default function Main() {
                             </div>
                             
                             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex-1">
-                                <div className="p-5 border-b border-gray-200">
-                                    <h2 className="text-gray-800 text-lg font-bold">Download History</h2>
-                                    <p className="text-gray-500 text-sm">Browse your completed downloads</p>
+                                <div className="p-5 border-b border-gray-200 flex justify-between items-center">
+                                    <div>
+                                        <h2 className="text-gray-800 text-lg font-bold">Download History</h2>
+                                        <p className="text-gray-500 text-sm">Browse your completed downloads</p>
+                                    </div>
+                                    {completedDownloads.length > 0 && (
+                                        <button 
+                                            onClick={clearDownloadHistory}
+                                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm"
+                                        >
+                                            Clear History
+                                        </button>
+                                    )}
                                 </div>
                                 
                                 {completedDownloads.length > 0 ? (
@@ -422,33 +609,7 @@ export default function Main() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {completedDownloads.map((download, index) => (
-                                                    <tr key={download.id} className={`text-gray-700 border-b border-gray-200 ${index % 2 === 0 ? 'bg-blue-50' : 'bg-white'} hover:bg-blue-100 transition-colors`}>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded bg-blue-100 text-[#1e40af] flex items-center justify-center">
-                                                                    <i className={`bi ${download.type === 'youtube' ? 'bi-youtube' : 'bi-file-earmark'}`}></i>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="font-medium text-gray-800">{download.fileName}</p>
-                                                                    <p className="text-xs text-gray-500">.{download.fileType}</p>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm">
-                                                            <span className="px-2 py-1 rounded-full bg-blue-100 text-[#1e40af] text-xs">
-                                                                {download.type.toUpperCase()}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm">{formatFileSize(download.fileSize)}</td>
-                                                        <td className="px-6 py-4 text-sm">{formatDate(download.completedAt)}</td>
-                                                        <td className="px-6 py-4 text-sm text-right">
-                                                            <button className="text-gray-500 hover:text-[#1e40af]">
-                                                                <i className="bi bi-three-dots-vertical"></i>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {historyList}
                                             </tbody>
                                         </table>
                                     </div>
