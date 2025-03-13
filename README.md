@@ -1,28 +1,39 @@
 # Download Manager
 
+<p>
+  <img src="https://raw.githubusercontent.com/repyh/download-manager/refs/heads/main/assets/strobe_logo.png" alt="Download Manager Logo" width="100">
+</p>
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Status](https://img.shields.io/badge/Status-Preview-yellow?style=flat-square)](https://github.com/repyh/download-manager)
 
 A modern, cross-platform download manager built with Electron and React.
+
+> ⚠️ **PREVIEW VERSION**: This application is currently in preview state and not ready for production use. You're welcome to download and try it out, but expect bugs and incomplete features. Feedback and contributions are appreciated!
 
 ![Download Manager Screenshot](https://github.com/repyh/download-manager/blob/main/main_screenshot.png)
 
 ## ✨ Features
 
 - 📥 Download files from the web with ease
-- 🚀 Accelerate downloads with multi-connection downloading
-- 📊 Monitor download progress with real-time statistics
-- 🗂️ Organize downloads in categories
-- 🌙 Light/Dark theme support
+- 🚀 Accelerated downloads with multi-connection downloading
+- 📊 Monitor download
 - 🔔 Notification when downloads complete
 
 ## 🔨 In-development
 
 - Pause and resumes.
-- Multi-file downloads.
+- Concurrent downloads.
+- Stability improvements and bug fixes.
+- Performance optimizations.
 
 ## 🚀 Installation
+
+### Preview Download
+
+You can download the latest preview version from the [Releases](https://github.com/yourusername/download-manager/releases) page. Remember that this is a pre-production version intended for testing and feedback.
 
 ### Prerequisites
 

@@ -497,7 +497,7 @@ export default function Main() {
             {/* Sidebar */}
             <div className="w-20 h-full bg-[#1e40af] flex flex-col items-center py-6 border-r border-[#2563eb]/20">
                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-10">
-                    <img src="../assets/strobe_logo.png" alt="Strobe Logo" className="w-8 h-8" />
+                    <img src="https://raw.githubusercontent.com/repyh/download-manager/refs/heads/main/assets/strobe_logo.png" alt="Strobe Logo" className="w-8 h-8" />
                 </div>
 
                 <div className="flex flex-col items-center gap-6 flex-1">
