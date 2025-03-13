@@ -1,6 +1,6 @@
 {
-  "name": "electron-react-boilerplate",
-  "description": "A foundation for scalable desktop apps",
+  "name": "Strobe",
+  "description": "A modern download manager.",
   "keywords": [
     "electron",
     "boilerplate",

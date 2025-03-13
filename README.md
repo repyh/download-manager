@@ -11,7 +11,7 @@
 
 A modern, cross-platform download manager built with Electron and React.
 
-> ⚠️ **PREVIEW VERSION**: This application is currently in preview state and not ready for production use. You're welcome to download and try it out, but expect bugs and incomplete features. Feedback and contributions are appreciated!
+> ⚠️ **PREVIEW VERSION**: This application is currently in development state and not ready for production use. You're welcome to build and try it out, but expect bugs and incomplete features. Feedback and contributions are appreciated!
 
 ![Strobe Preview Screenshot](https://github.com/repyh/download-manager/blob/main/main_screenshot.png)
 
@@ -28,12 +28,6 @@ A modern, cross-platform download manager built with Electron and React.
 - Concurrent downloads.
 - Stability improvements and bug fixes.
 - Performance optimizations.
-
-## 🚀 Installation
-
-### Preview Download
-
-You can download the latest preview version from the [Releases](https://github.com/repyh/download-manager/releases) page. Remember that this is a pre-production version intended for testing and feedback.
 
 ### Prerequisites
 
