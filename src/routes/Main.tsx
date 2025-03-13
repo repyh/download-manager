@@ -1,6 +1,8 @@
 import DownloadURL from "../popups/DownloadURL";
+import Settings from "../popups/Settings";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import throttle from 'lodash.throttle';
+import { HistoryView } from "../components/history";
 
 // Define interface for DownloadItem props
 interface DownloadItemProps {
@@ -20,35 +22,40 @@ interface DownloadItemProps {
 
 // DownloadItem component - memoized to prevent unnecessary re-renders
 const DownloadItem = memo(({ downloadKey, downloadData, formatFileSize }: DownloadItemProps) => {
-    const {type, fileName, fileType, fileSize, totalProgress, finished, status, downloadSpeed} = downloadData;
+    const { type, fileName, fileType, fileSize, totalProgress, finished, status, downloadSpeed } = downloadData;
     let statusColor, statusIcon, statusBg;
+    // Status text to display next to the file name
+    let statusText = status.charAt(0).toUpperCase() + status.slice(1);
 
-    switch(status) {
-        case 'starting':
-            statusColor = 'text-amber-600';
-            statusBg = 'bg-amber-100';
-            statusIcon = 'bi-hourglass-split';
-            break;
-        case 'downloading':
-            statusColor = 'text-[#1e40af]';
-            statusBg = 'bg-blue-100';
-            statusIcon = 'bi-arrow-down-circle-fill';
-            break;
-        case 'finished':
-            statusColor = 'text-emerald-600';
-            statusBg = 'bg-emerald-100';
-            statusIcon = 'bi-check-circle-fill';
-            break;
-        default:
-            statusColor = 'text-amber-600';
-            statusBg = 'bg-amber-100';
-            statusIcon = 'bi-hourglass-split';
-            break;
+    // Update the switch statement to prioritize the 'finished' state
+    if (finished) {
+        statusColor = 'text-emerald-600';
+        statusBg = 'bg-emerald-100';
+        statusIcon = 'bi-check-circle-fill';
+        statusText = 'Finished'; // Ensure the status text shows "Finished"
+    } else {
+        switch (status) {
+            case 'starting':
+                statusColor = 'text-amber-600';
+                statusBg = 'bg-amber-100';
+                statusIcon = 'bi-hourglass-split';
+                break;
+            case 'downloading':
+                statusColor = 'text-[#1e40af]';
+                statusBg = 'bg-blue-100';
+                statusIcon = 'bi-arrow-down-circle-fill';
+                break;
+            default:
+                statusColor = 'text-amber-600';
+                statusBg = 'bg-amber-100';
+                statusIcon = 'bi-hourglass-split';
+                break;
+        }
     }
 
     let displayDownload = `${(totalProgress * 100).toFixed(2)}% Downloaded (${downloadSpeed.toFixed(2)}MB/s)`;
 
-    switch(true) {
+    switch (true) {
         case totalProgress <= 0:
             displayDownload = 'Preparing';
             break;
@@ -61,33 +68,33 @@ const DownloadItem = memo(({ downloadKey, downloadData, formatFileSize }: Downlo
     }
 
     return (
-        <div 
+        <div
             className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all"
         >
-            <div 
-                className={`h-1 ${finished ? 'bg-emerald-500' : 'bg-[#1e40af]'}`} 
-                style={{ width: `${totalProgress*100}%` }}
+            <div
+                className={`h-1 ${finished ? 'bg-emerald-500' : 'bg-[#1e40af]'}`}
+                style={{ width: `${totalProgress * 100}%` }}
             >
             </div>
-            
+
             <div className="p-5">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-4 items-start">
                         <div className={`flex items-center justify-center h-12 w-12 rounded-lg ${statusBg} ${statusColor} p-2`}>
                             <i className={`bi ${statusIcon} text-2xl`}></i>
                         </div>
-                        
+
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-gray-800 inter font-semibold text-lg">{fileName}</h2>
                                 <span className={`px-2 py-0.5 rounded-md ${statusBg} ${statusColor} text-xs font-medium`}>
-                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                    {statusText}
                                 </span>
                             </div>
                             <p className="text-[#1e40af] nunito text-xs font-medium mt-0.5">{type.toUpperCase()} DOWNLOAD</p>
                         </div>
                     </div>
-                    
+
                     {!finished && (
                         <div className="flex items-center">
                             <button className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 p-2 rounded transition-all">
@@ -96,7 +103,7 @@ const DownloadItem = memo(({ downloadKey, downloadData, formatFileSize }: Downlo
                         </div>
                     )}
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="bg-blue-50 rounded-lg p-3">
                         <p className="text-gray-500 text-xs">File Type</p>
@@ -113,15 +120,15 @@ const DownloadItem = memo(({ downloadKey, downloadData, formatFileSize }: Downlo
                         </p>
                     </div>
                 </div>
-                
+
                 <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-center">
                         <p className="text-gray-500 text-xs">Progress</p>
                         <p className="text-gray-700 text-xs font-medium">{(totalProgress * 100).toFixed(1)}%</p>
                     </div>
                     <div className="w-full h-2 bg-blue-50 rounded-full overflow-hidden">
-                        <div 
-                            style={{ width: `${totalProgress*100}%` }} 
+                        <div
+                            style={{ width: `${totalProgress * 100}%` }}
                             className={`h-full transition-all duration-300 ${finished ? 'bg-emerald-500' : 'bg-[#1e40af]'}`}
                         ></div>
                     </div>
@@ -134,17 +141,17 @@ const DownloadItem = memo(({ downloadKey, downloadData, formatFileSize }: Downlo
 
 // Define interface for HistoryItem props
 interface HistoryItemProps {
-  download: {
-    type: string;
-    fileName: string;
-    fileType: string;
-    fileSize: number;
-    completedAt: string;
-    id: string;
-  };
-  index: number;
-  formatFileSize: (bytes: number) => string;
-  formatDate: (dateString: string) => string;
+    download: {
+        type: string;
+        fileName: string;
+        fileType: string;
+        fileSize: number;
+        completedAt: string;
+        id: string;
+    };
+    index: number;
+    formatFileSize: (bytes: number) => string;
+    formatDate: (dateString: string) => string;
 }
 
 // HistoryItem component - memoized to prevent unnecessary re-renders
@@ -181,14 +188,26 @@ const HistoryItem = memo(({ download, index, formatFileSize, formatDate }: Histo
 export default function Main() {
     const { electron } = window;
     const [downloadURLWindow, setDownloadURLWindow] = useState(false);
+    const [settingsWindow, setSettingsWindow] = useState(false);
     const [downloads, setDownloads] = useState(new Map());
     const [fetchedURL, setFetchedURL] = useState('');
-    const [showHistory, setShowHistory] = useState(false);
     const [activeView, setActiveView] = useState('downloads'); // 'downloads' or 'history'
     const [completedDownloads, setCompletedDownloads] = useState<Array<any>>([]);
+    const [downloadPath, setDownloadPath] = useState<string>('');
+    const [notificationSettings, setNotificationSettings] = useState({
+        enabled: true, // Default to enabled
+        sound: true,   // Default sound to enabled
+    });
 
-    // localStorage key for download history
+    // localStorage keys
     const STORAGE_KEY = 'download-manager-history';
+    const DOWNLOAD_PATH_KEY = 'download-default-location';
+    const NOTIFICATION_SETTINGS_KEY = 'download-notification-settings';
+
+    // Get download path from localStorage
+    const getDownloadPath = useCallback(() => {
+        return localStorage.getItem(DOWNLOAD_PATH_KEY) || '';
+    }, []);
 
     // Load download history from localStorage on component mount
     useEffect(() => {
@@ -200,10 +219,21 @@ export default function Main() {
                     setCompletedDownloads(parsedHistory);
                 }
             }
+
+            // Get the download path from localStorage
+            const path = getDownloadPath();
+            setDownloadPath(path);
+            
+            // Get the notification settings from localStorage
+            const storedNotificationSettings = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+            if (storedNotificationSettings) {
+                const parsedSettings = JSON.parse(storedNotificationSettings);
+                setNotificationSettings(parsedSettings);
+            }
         } catch (error) {
-            console.error('Failed to load download history from localStorage:', error);
+            console.error('Failed to load data from localStorage:', error);
         }
-    }, []);
+    }, [getDownloadPath]);
 
     // Debounced function to save to localStorage (prevents excessive writes)
     const debouncedSaveToStorage = useCallback(
@@ -245,7 +275,7 @@ export default function Main() {
     const throttledUpdateDownloads = useCallback(
         throttle((key: any, newProperty: any) => {
             updateDownloads(key, newProperty);
-        }, 1000), 
+        }, 1000),
         [updateDownloads]
     );
 
@@ -272,7 +302,7 @@ export default function Main() {
 
     const formatDate = useCallback((dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }, []);
 
     // UI action handlers
@@ -284,6 +314,10 @@ export default function Main() {
         electron.ipcRenderer.sendMessage('minimize-app', []);
     }, [electron]);
 
+    const maximizeApp = useCallback(() => {
+        electron.ipcRenderer.sendMessage('maximize-app', []);
+    }, [electron]);
+
     // Setup event listeners once on component mount
     useEffect(() => {
         const fileDownloadHandler = (payload: any) => {
@@ -291,9 +325,9 @@ export default function Main() {
             setFetchedURL(payload.finalUrl);
             setDownloadURLWindow(true);
         };
-        
+
         const downloadProgressHandler = (response: any) => {
-            switch(response[0]) {
+            switch (response[0]) {
                 case 'file': {
                     const [type, fileName, fileType, fileSize, workerId, progress, totalProgress, workerSpeeds] = response as ['file' | 'youtube', string, string, number, number, number, number, Array<number>];
                     const downloadSpeed = workerSpeeds.reduce((acc, curr) => acc + curr, 0) / workerSpeeds.length / 1024;
@@ -309,9 +343,9 @@ export default function Main() {
                 }
             }
         };
-        
+
         const downloadFinishedHandler = (res: any) => {
-            switch(res[0]) {
+            switch (res[0]) {
                 case 'file': {
                     const [type, fileName, fileType, fileSize, oldType] = res as ['file' | 'youtube', string, string, number, string];
                     updateDownloads(`${fileName}/${oldType}`, {
@@ -319,20 +353,20 @@ export default function Main() {
                         finished: true,
                         status: 'finished'
                     });
-                    
+
                     // Add to completed downloads history - check for duplicates first
                     setCompletedDownloads(prev => {
                         // Check if we already have this download in history
-                        const existingDownload = prev.find(d => 
-                            d.fileName === fileName && 
+                        const existingDownload = prev.find(d =>
+                            d.fileName === fileName &&
                             (d.fileType === fileType || d.fileType === oldType)
                         );
-                        
+
                         // If it exists, don't add it again
                         if (existingDownload) {
                             return prev;
                         }
-                        
+
                         // Otherwise add the new download to history
                         const download = {
                             type,
@@ -342,20 +376,25 @@ export default function Main() {
                             completedAt: new Date().toISOString(),
                             id: `${fileName}/${oldType}_${Date.now()}`
                         };
-                        
+
                         // Add new download to the beginning of the array
                         const newHistory = [download, ...prev];
-                        
+
                         // Update localStorage with the new history (done via useEffect)
                         return newHistory;
                     });
+                    
+                    // Send notification if enabled in settings
+                    if (notificationSettings.enabled) {
+                        electron.ipcRenderer.sendMessage('emit-notification', ['Download Complete', `${fileName}.${fileType} has been downloaded successfully.`]);
+                    }
                     break;
                 }
             }
         };
-        
+
         const downloadStartingHandler = (res: any) => {
-            switch(res[0]) {
+            switch (res[0]) {
                 case 'file': {
                     const [type, fileName, fileType, fileSize] = res as ['file' | 'youtube', string, string, number];
                     addDownload(`${fileName}/${fileType}`, {
@@ -379,6 +418,28 @@ export default function Main() {
         const removeFinishedListener = window.electron.ipcRenderer.on('download-finished', downloadFinishedHandler);
         const removeStartingListener = window.electron.ipcRenderer.on('download-starting', downloadStartingHandler);
 
+        // Listen for download path changes from settings
+        const handleStorageChange = (event: StorageEvent) => {
+            if (event.key === DOWNLOAD_PATH_KEY) {
+                const newPath = getDownloadPath();
+                if (newPath !== downloadPath) {
+                    setDownloadPath(newPath);
+                }
+            } else if (event.key === NOTIFICATION_SETTINGS_KEY) {
+                try {
+                    const newSettings = event.newValue ? JSON.parse(event.newValue) : {
+                        enabled: true,
+                        sound: true
+                    };
+                    setNotificationSettings(newSettings);
+                } catch (error) {
+                    console.error('Failed to parse notification settings:', error);
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
         // Cleanup function to remove event listeners
         return () => {
             // Call the cleanup functions returned by the 'on' method
@@ -386,36 +447,24 @@ export default function Main() {
             removeProgressListener();
             removeFinishedListener();
             removeStartingListener();
-            
+            window.removeEventListener('storage', handleStorageChange);
+
             // Cancel any pending throttled calls
             throttledUpdateDownloads.cancel();
         };
-    }, [addDownload, throttledUpdateDownloads, updateDownloads]);
+    }, [addDownload, throttledUpdateDownloads, updateDownloads, downloadPath, getDownloadPath, notificationSettings, electron]);
 
     // Memoize download list to prevent unnecessary re-renders
     const downloadsList = useMemo(() => {
         return Array.from(downloads).map(([key, value]) => (
-            <DownloadItem 
-                key={key} 
-                downloadKey={key} 
-                downloadData={value} 
-                formatFileSize={formatFileSize} 
+            <DownloadItem
+                key={key}
+                downloadKey={key}
+                downloadData={value}
+                formatFileSize={formatFileSize}
             />
         ));
     }, [downloads, formatFileSize]);
-
-    // Memoize history list to prevent unnecessary re-renders
-    const historyList = useMemo(() => {
-        return completedDownloads.map((download, index) => (
-            <HistoryItem 
-                key={download.id} 
-                download={download} 
-                index={index}
-                formatFileSize={formatFileSize}
-                formatDate={formatDate}
-            />
-        ));
-    }, [completedDownloads, formatFileSize, formatDate]);
 
     // Add a function to clear history if needed
     const clearDownloadHistory = useCallback(() => {
@@ -427,58 +476,77 @@ export default function Main() {
         }
     }, []);
 
-    // Generate total storage used calculation once
-    const totalStorageUsed = useMemo(() => {
-        return formatFileSize(completedDownloads.reduce((acc, dl) => acc + (dl.fileSize || 0), 0));
-    }, [completedDownloads, formatFileSize]);
+    // Add function to remove a single item from history
+    const removeHistoryItem = useCallback((id: string) => {
+        setCompletedDownloads(prev => {
+            const filteredHistory = prev.filter(item => item.id !== id);
+            
+            // Update localStorage directly for immediate persistence
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredHistory));
+            } catch (error) {
+                console.error('Failed to update localStorage after removing item:', error);
+            }
+            
+            return filteredHistory;
+        });
+    }, []);
 
-    // The rest of the rendering code remains the same
     return (
         <div className="h-screen w-screen bg-[#f8fafc] flex overflow-hidden">
             {/* Sidebar */}
             <div className="w-20 h-full bg-[#1e40af] flex flex-col items-center py-6 border-r border-[#2563eb]/20">
                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-10">
-                    <i className="bi bi-cloud-download text-[#1e40af] text-xl"></i>
+                    <img src="../assets/strobe_logo.png" alt="Strobe Logo" className="w-8 h-8" />
                 </div>
-                
+
                 <div className="flex flex-col items-center gap-6 flex-1">
-                    <button 
+                    <button
                         onClick={() => setActiveView('downloads')}
-                        className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all ${
-                            activeView === 'downloads' 
-                                ? 'bg-white text-[#1e40af]' 
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all ${activeView === 'downloads'
+                                ? 'bg-white text-[#1e40af]'
                                 : 'text-white/70 hover:text-white hover:bg-[#2563eb]/30'
-                        }`}
+                            }`}
                     >
                         <i className="bi bi-arrow-down-circle text-xl"></i>
                     </button>
-                    
-                    <button 
-                        onClick={() => setActiveView('history')}
-                        className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all ${
-                            activeView === 'history' 
-                                ? 'bg-white text-[#1e40af]' 
-                                : 'text-white/70 hover:text-white hover:bg-[#2563eb]/30'
-                        }`}
-                    >
-                        <i className="bi bi-clock-history text-xl"></i>
-                    </button>
-                    
-                    <button 
+
+                    {/* <button
                         onClick={() => window.open("https://github.com/repyh/download-manager")}
                         className="w-12 h-12 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-[#2563eb]/30 transition-all"
                     >
+                        <i className="bi bi-magnet text-xl"></i>
+                    </button> */}
+
+                    <button
+                        onClick={() => setActiveView('history')}
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all ${activeView === 'history'
+                                ? 'bg-white text-[#1e40af]'
+                                : 'text-white/70 hover:text-white hover:bg-[#2563eb]/30'
+                            }`}
+                    >
+                        <i className="bi bi-clock-history text-xl"></i>
+                    </button>
+
+                    <button
+                        onClick={() => window.open("https://github.com/repyh/download-manager")}
+                        className="w-12 h-12 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-[#2563eb]/30 transition-all relative group"
+                    >
                         <i className="bi bi-github text-xl"></i>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-2 transition-all duration-300">
+                            <i className="bi bi-arrow-up-right text-[0.55rem] text-[#1e40af]"></i>
+                        </div>
                     </button>
                 </div>
-                
-                <button 
+
+                <button
+                    onClick={() => setSettingsWindow(true)}
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-[#2563eb]/30 transition-all"
                 >
                     <i className="bi bi-gear text-xl"></i>
                 </button>
             </div>
-            
+
             {/* Main content */}
             <div className="flex-1 flex flex-col h-full">
                 {/* Custom titlebar */}
@@ -486,52 +554,51 @@ export default function Main() {
                     <h1 className="text-[#1e3a8a] nunito font-bold text-lg">
                         {activeView === 'downloads' ? 'Active Downloads' : 'Download History'}
                     </h1>
-                    
+
                     <div className="flex items-center gap-4">
-                        {activeView === 'downloads' && (
-                            <button 
-                                onClick={() => setDownloadURLWindow(true)}
-                                className="px-4 py-2 bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded-lg no-drag transition-all flex items-center gap-2"
-                            >
-                                <i className="bi bi-plus"></i>
-                                <span>New Download</span>
-                            </button>
-                        )}
-                        
                         <div className="flex items-center gap-3 no-drag">
-                            <button 
-                                onClick={minimizeApp} 
+                            <button
+                                onClick={minimizeApp}
                                 className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 hover:text-[#1e40af] transition-colors"
+                                title="Minimize"
                             >
                                 <i className="bi bi-dash text-lg"></i>
                             </button>
-                            <button 
-                                onClick={closeApp} 
+                            <button
+                                onClick={maximizeApp}
+                                className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 hover:text-[#1e40af] transition-colors"
+                                title="Maximize"
+                            >
+                                <i className="bi bi-fullscreen text-lg"></i>
+                            </button>
+                            <button
+                                onClick={closeApp}
                                 className="w-8 h-8 flex items-center justify-center rounded hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors"
+                                title="Close"
                             >
                                 <i className="bi bi-x-lg"></i>
                             </button>
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Content area */}
                 <div className="flex-1 overflow-auto p-6 bg-[#f0f5ff]">
                     {/* Downloads View */}
                     {activeView === 'downloads' && (
                         <div className="space-y-4">
                             {downloadsList}
-                            
+
                             {downloads.size === 0 && (
                                 <div className="flex flex-col items-center justify-center h-96">
                                     <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mb-6">
                                         <i className="bi bi-cloud-download text-6xl text-[#1e40af]"></i>
                                     </div>
                                     <h2 className="text-gray-800 nunito font-bold text-xl mb-2">No active downloads</h2>
-                                    <p className="text-gray-500 nunito mb-6">Start a new download to see it here</p>
-                                    <button 
+                                    <p className="text-gray-500 inter mb-6">Start a new download to see it here</p>
+                                    <button
                                         onClick={() => setDownloadURLWindow(true)}
-                                        className="px-6 py-3 bg-[#1e40af] text-white rounded-lg hover:bg-[#1e3a8a] transition-colors flex items-center gap-2"
+                                        className="px-6 py-3 bg-[#1e40af] text-white rounded-lg hover:bg-[#1e3a8a] transition-colors flex items-center gap-2 nunito font-medium"
                                     >
                                         <i className="bi bi-plus"></i>
                                         <span>Start a download</span>
@@ -540,105 +607,37 @@ export default function Main() {
                             )}
                         </div>
                     )}
-                    
-                    {/* History View */}
+
+                    {/* History View - Using the modularized component */}
                     {activeView === 'history' && (
-                        <div className="flex flex-col h-full">
-                            <div className="grid grid-cols-3 gap-6 mb-6">
-                                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="text-gray-800 font-medium">Total Downloads</h3>
-                                        <div className="w-10 h-10 rounded-lg bg-blue-100 text-[#1e40af] flex items-center justify-center">
-                                            <i className="bi bi-download"></i>
-                                        </div>
-                                    </div>
-                                    <p className="text-3xl text-gray-800 font-bold">{completedDownloads.length}</p>
-                                </div>
-                                
-                                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="text-gray-800 font-medium">Storage Used</h3>
-                                        <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                                            <i className="bi bi-hdd"></i>
-                                        </div>
-                                    </div>
-                                    <p className="text-3xl text-gray-800 font-bold">{totalStorageUsed}</p>
-                                </div>
-                                
-                                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="text-gray-800 font-medium">Last Download</h3>
-                                        <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-                                            <i className="bi bi-clock-history"></i>
-                                        </div>
-                                    </div>
-                                    <p className="text-lg text-gray-800 font-medium">
-                                        {completedDownloads.length > 0 
-                                            ? formatDate(completedDownloads[0].completedAt) 
-                                            : 'No downloads yet'}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex-1">
-                                <div className="p-5 border-b border-gray-200 flex justify-between items-center">
-                                    <div>
-                                        <h2 className="text-gray-800 text-lg font-bold">Download History</h2>
-                                        <p className="text-gray-500 text-sm">Browse your completed downloads</p>
-                                    </div>
-                                    {completedDownloads.length > 0 && (
-                                        <button 
-                                            onClick={clearDownloadHistory}
-                                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm"
-                                        >
-                                            Clear History
-                                        </button>
-                                    )}
-                                </div>
-                                
-                                {completedDownloads.length > 0 ? (
-                                    <div className="overflow-auto max-h-[calc(100vh-320px)]">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-                                                <tr>
-                                                    <th className="px-6 py-3">File Name</th>
-                                                    <th className="px-6 py-3">Type</th>
-                                                    <th className="px-6 py-3">Size</th>
-                                                    <th className="px-6 py-3">Date</th>
-                                                    <th className="px-6 py-3"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {historyList}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-20">
-                                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-                                            <i className="bi bi-clock-history text-3xl text-[#1e40af]"></i>
-                                        </div>
-                                        <h3 className="text-gray-800 font-medium text-lg mb-2">No download history</h3>
-                                        <p className="text-gray-500 text-sm mb-6">Completed downloads will appear here</p>
-                                        <button 
-                                            onClick={() => {
-                                                setActiveView('downloads');
-                                                setDownloadURLWindow(true);
-                                            }}
-                                            className="px-4 py-2 bg-[#1e40af] text-white rounded-lg hover:bg-[#1e3a8a] transition-colors"
-                                        >
-                                            Start a new download
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <HistoryView 
+                            completedDownloads={completedDownloads}
+                            formatFileSize={formatFileSize}
+                            formatDate={formatDate}
+                            clearDownloadHistory={clearDownloadHistory}
+                            setActiveView={setActiveView}
+                            setDownloadURLWindow={setDownloadURLWindow}
+                            removeHistoryItem={removeHistoryItem}
+                        />
                     )}
                 </div>
             </div>
-            
+
             {/* Download URL dialog */}
-            <DownloadURL openURL={fetchedURL} showWindow={downloadURLWindow} setShowWindow={setDownloadURLWindow} />
+            <DownloadURL
+                openURL={fetchedURL}
+                showWindow={downloadURLWindow}
+                setShowWindow={setDownloadURLWindow}
+                downloadPath={downloadPath}
+            />
+
+            {/* Settings dialog */}
+            <Settings
+                showWindow={settingsWindow}
+                setShowWindow={setSettingsWindow}
+                // notificationSettings={notificationSettings}
+                // notificationSettingsKey={NOTIFICATION_SETTINGS_KEY}
+            />
         </div>
     );
 }

@@ -95,6 +95,7 @@ const createWindow = async () => {
         resizable: false,
         // titleBarStyle: "hidden",
         frame: false,
+        title: "Strobe Download Manager"
     });
     events(mainWindow, app);
 
@@ -111,6 +112,10 @@ const createWindow = async () => {
             return filePaths[0];
         }
     })
+
+    ipcMain.on('get-asset-path', (event, filename) => {
+        event.returnValue = getAssetPath(filename);
+    });
 
     mainWindow.loadURL(resolveHtmlPath('index.html'));
 

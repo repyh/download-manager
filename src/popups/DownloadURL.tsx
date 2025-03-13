@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
 
-export default function DownloadURL({ openURL, showWindow = false, setShowWindow }: { openURL: string, showWindow: boolean, setShowWindow: React.Dispatch<React.SetStateAction<boolean>> }) {
+interface DownloadURLProps {
+    openURL: string;
+    showWindow: boolean;
+    setShowWindow: React.Dispatch<React.SetStateAction<boolean>>;
+    downloadPath: string; // This prop will be deprecated as we'll get path directly
+}
+
+export default function DownloadURL({ openURL, showWindow, setShowWindow, downloadPath }: DownloadURLProps) {
     const [threads, setThreads] = useState(1);
     const [maxThreads, setMaxThreads] = useState(1);
-    const [fileName, setFileName] = useState('default');
+    const [fileName, setFileName] = useState('');
     const [downloadURL, setDownloadURL] = useState('');
     const [loading, setLoading] = useState(false);
+    const [localDownloadPath, setLocalDownloadPath] = useState('');
+    
+    // Constants
+    const DOWNLOAD_PATH_KEY = 'download-default-location';
 
     window.electron.ipcRenderer.once('max-threads-retrieve', (arg: any) => {
         setMaxThreads(parseInt(arg));
@@ -14,38 +25,58 @@ export default function DownloadURL({ openURL, showWindow = false, setShowWindow
     window.electron.ipcRenderer.once('download-starting', () => {
         setLoading(false);
         closePop();
-    })
+    });
+    
+    window.electron.ipcRenderer.once('download-path-retrieve', (arg: any) => {
+        // If we have a path in localStorage, use that, otherwise use what electron gives us
+        const savedPath = localStorage.getItem(DOWNLOAD_PATH_KEY);
+        setLocalDownloadPath(savedPath || arg);
+        setFileName(savedPath || arg); // Set the initial fileName to the path
+    });
 
     useEffect(() => {
-        // console.log('testa', openURL);
         window.electron.ipcRenderer.sendMessage('get-max-threads', []);
+        window.electron.ipcRenderer.sendMessage('get-download-path', []);
+        
+        // Listen for storage changes
+        const handleStorageChange = (event: StorageEvent) => {
+            if (event.key === DOWNLOAD_PATH_KEY && event.newValue !== null) {
+                setLocalDownloadPath(event.newValue);
+                setFileName(event.newValue);
+            }
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, []);
 
     useEffect(() => {
         if (openURL) {
             setDownloadURL(openURL);
         }
-    }, [openURL])
+    }, [openURL]);
 
     function startDownload() {
-        // closePop();
         setLoading(true);
         window.electron.ipcRenderer.sendMessage('start-download', [
             downloadURL,
-            fileName,
-            threads
+            fileName, // Selected directory takes precedence
+            threads,
+            localDownloadPath // Pass the local download path as fallback
         ]);
-        // setShowWindow(false);
     }
 
     function directorySearch() {
         window.electron.selectFolder().then((res: string) => {
             setFileName(res);
-        })
+        });
     }
 
     function onFileNameChange(e: React.ChangeEvent<HTMLInputElement>) {
-        setFileName(e.target.value !== '' ? e.target.value : 'default');
+        setFileName(e.target.value);
     }
 
     function onDownloadURLChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -55,7 +86,7 @@ export default function DownloadURL({ openURL, showWindow = false, setShowWindow
     function closePop() {
         setShowWindow(false);
         setDownloadURL('');
-        setFileName('default');
+        setFileName(localDownloadPath); // Reset to default download path
     }
 
     function increaseThreads() {
@@ -123,7 +154,7 @@ export default function DownloadURL({ openURL, showWindow = false, setShowWindow
                                         disabled 
                                         value={fileName} 
                                         onChange={onFileNameChange} 
-                                        placeholder="default" 
+                                        placeholder="Select download location" 
                                         className="w-full h-10 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-500" 
                                         type="text" 
                                     />

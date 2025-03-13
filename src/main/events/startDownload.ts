@@ -36,6 +36,45 @@ class Downloader {
         this.downloadFileInChunks(destination, chunksNum, workers);
     }
 
+    private getFileTypeFromUrl(url: string): string {
+        // Extract file extension from URL if available
+        const urlParts = url.split('?')[0].split('#')[0].split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        
+        if (fileName.includes('.')) {
+            return fileName.split('.').pop()?.toLowerCase() || 'temp';
+        }
+        
+        return 'temp';
+    }
+    
+    private getFileTypeFromContentType(contentType: string | null): string {
+        if (!contentType) return 'temp';
+        
+        const mimeToExt: {[key: string]: string} = {
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/gif': 'gif',
+            'image/webp': 'webp',
+            'image/svg+xml': 'svg',
+            'video/mp4': 'mp4',
+            'video/webm': 'webm',
+            'audio/mpeg': 'mp3',
+            'audio/ogg': 'ogg',
+            'application/pdf': 'pdf',
+            'application/zip': 'zip',
+            'application/json': 'json',
+            'text/html': 'html',
+            'text/plain': 'txt',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+            'application/octet-stream': 'bin'
+        };
+        
+        const mimeType = contentType.split(';')[0].toLowerCase();
+        return mimeToExt[mimeType] || 'temp';
+    }
+
     private async getFileSize(): Promise<number> {
         const url = this.url;
 
@@ -51,18 +90,41 @@ class Downloader {
                 } else {
                     const contentLength = parseInt(res.headers.get('content-length') || '0');
                     if(!contentLength) reject(new Error(`Missing 'content-length' header!`));
-                    this.fileType = 'temp';
+                    
+                    // First try to determine file type from content-type header
+                    const contentType = res.headers.get('content-type');
+                    this.fileType = this.getFileTypeFromContentType(contentType);
+                    
+                    // If that didn't work, try getting from URL
+                    if (this.fileType === 'temp') {
+                        this.fileType = this.getFileTypeFromUrl(this.url);
+                    }
 
                     const contentDisp = res.headers.get('content-disposition');
                     if(contentDisp && contentDisp.includes('filename=')) {
-                        const match = contentDisp.match(/filename\*?=(?:UTF-8'')?["']?([^"';\r\n.]+)\.[^"';\r\n]+/);
+                        const match = contentDisp.match(/filename\*?=(?:UTF-8'')?["']?([^"';\r\n.]+)\.([^"';\r\n]+)/);
 
                         if(match && match[1]) {
                             this.filename = decodeURIComponent(match[1]);
+                            // If we also got a file extension from the content-disposition, use it
+                            if (match[2]) {
+                                this.fileType = match[2].toLowerCase();
+                            }
+                        }
+                    }
+                    
+                    // If filename is still empty, extract from URL
+                    if (!this.filename) {
+                        const urlParts = this.url.split('?')[0].split('#')[0].split('/');
+                        const fileNameWithExt = urlParts[urlParts.length - 1];
+                        if (fileNameWithExt.includes('.')) {
+                            this.filename = fileNameWithExt.split('.')[0];
+                        } else {
+                            this.filename = fileNameWithExt || 'download';
                         }
                     }
 
-                    resolve(contentLength)
+                    resolve(contentLength);
                 }
             }).catch(reject);
         })
