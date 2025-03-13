@@ -44,10 +44,10 @@ You can download the latest preview version from the [Releases](https://github.c
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/download-manager.git
+git clone https://github.com/repyh/strobe.git
 
 # Navigate to the project directory
-cd download-manager
+cd strobe
 
 # Install dependencies
 npm install
