@@ -1,4 +1,4 @@
-# Download Manager
+# Strobe - Download Manager
 
 <p>
   <img src="https://raw.githubusercontent.com/repyh/download-manager/refs/heads/main/assets/strobe_logo.png" alt="Download Manager Logo" width="100">
@@ -13,7 +13,7 @@ A modern, cross-platform download manager built with Electron and React.
 
 > ⚠️ **PREVIEW VERSION**: This application is currently in preview state and not ready for production use. You're welcome to download and try it out, but expect bugs and incomplete features. Feedback and contributions are appreciated!
 
-![Download Manager Screenshot](https://github.com/repyh/download-manager/blob/main/main_screenshot.png)
+![Strobe Preview Screenshot](https://github.com/repyh/download-manager/blob/main/main_screenshot.png)
 
 ## ✨ Features
 
@@ -33,7 +33,7 @@ A modern, cross-platform download manager built with Electron and React.
 
 ### Preview Download
 
-You can download the latest preview version from the [Releases](https://github.com/yourusername/download-manager/releases) page. Remember that this is a pre-production version intended for testing and feedback.
+You can download the latest preview version from the [Releases](https://github.com/repyh/download-manager/releases) page. Remember that this is a pre-production version intended for testing and feedback.
 
 ### Prerequisites
 
